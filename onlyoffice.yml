@@ -1,0 +1,23 @@
+version: "3"
+services:
+  onlyoffice:
+    container_name: onlyoffice
+    restart: always
+    image: onlyoffice/documentserver
+    volumes:
+      - ${USERDIR}/docker/onlyoffice/DocumentServer/logs:/var/log/onlyoffice
+      - ${USERDIR}/docker/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data
+      - ${USERDIR}/docker/onlyoffice/DocumentServer/lib:/var/lib/onlyoffice
+      - ${USERDIR}/docker/onlyoffice/DocumentServer/db:/var/lib/postgresql
+    networks:
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.onlyoffice.rule=Host(`onlyoffice.${DOMAINNAME}`)"
+      - "traefik.http.routers.onlyoffice.entrypoints=websecure"
+      - "traefik.http.routers.onlyoffice.tls.certresolver=mydnschallenge"
+      - "traefik.http.services.onlyoffice.loadbalancer.server.port=80"
+networks:
+  traefik_proxy:
+    external:
+      name: traefik_proxy

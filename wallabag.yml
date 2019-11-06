@@ -1,0 +1,25 @@
+version: "3"
+services:
+  wallabag:
+    container_name: wallabag
+    restart: always
+    image: wallabag/wallabag
+    volumes:
+      - ${USERDIR}/docker/wallabag/data:/var/www/wallabag/data
+      - ${USERDIR}/docker/wallabag/images:/var/www/wallabag/web/assets/images
+    networks:
+      - traefik_proxy
+    environment:
+      - "SYMFONY__ENV__FOSUSER_REGISTRATION=false"
+      - "SYMFONY__ENV__DOMAIN_NAME=https://wallabag.${DOMAINNAME}"
+      - "SYMFONY__ENV__FOSUSER_CONFIRMATION=false"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wallabag.rule=Host(`wallabag.${DOMAINNAME}`)"
+      - "traefik.http.routers.wallabag.entrypoints=websecure"
+      - "traefik.http.routers.wallabag.tls.certresolver=mydnschallenge"
+      - "traefik.http.services.wallabag.loadbalancer.server.port=80"
+networks:
+  traefik_proxy:
+    external:
+      name: traefik_proxy

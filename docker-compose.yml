@@ -1,0 +1,68 @@
+# setup a Traefik Reverse-Proxy with a docker back-end
+# Services are not exposed by default; sample lable setup for services below
+# dashboard available with basic auth (user/pass in /etc/environment) at https://traefik.domainname
+version: '3'
+
+services:
+  traefik:
+    image: traefik:v2.0
+    container_name: traefik
+    command:
+      - "--accesslog=true"
+      - "--api"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.mydnschallenge.acme.dnschallenge=true"
+      - "--certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.mydnschallenge.acme.email=${CLOUDFLARE_EMAIL}"
+      - "--certificatesresolvers.mydnschallenge.acme.storage=/letsencrypt/acme.json"
+      - "--serverstransport.insecureskipverify=true"
+    volumes:
+      - ${USERDIR}/docker/letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
+      - CF_API_KEY=${CLOUDFLARE_API_KEY}
+    labels:    
+      - "traefik.enable=true"
+      # global redirect to https
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+      # middleware redirect
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      # Expose traefik Dashboard
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAINNAME}`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.tls.certresolver=mydnschallenge"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${HTTP_USERNAME}:${HTTP_PASSWORD}"
+      
+    networks:
+      - traefik_proxy
+    restart: always
+
+networks:
+  traefik_proxy:
+    external:
+      name: traefik_proxy
+
+
+      
+
+# touch acme.json; chmod 600 acme.json
+
+# sample labels to expose myservice.domainname through port myport
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.myservice.rule=Host(`myservice.${DOMAINNAME}`)"
+#      - "traefik.http.routers.myservice.entrypoints=websecure"
+#      - "traefik.http.routers.myservice.tls.certresolver=mydnschallenge"
+#      - "traefik.http.services.myservice.loadbalancer.server.port=myport"

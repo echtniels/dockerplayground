@@ -1,0 +1,11 @@
+PUID=1000
+PGID=999
+TZ="Europe/Amsterdam"
+USERDIR="/home/administrator"
+MYSQL_ROOT_PASSWORD="replace-this"
+HTTP_USERNAME=replace-this
+HTTP_PASSWORD="replace-with-hashed-password"
+DOMAINNAME=yourdomain.com
+CLOUDFLARE_EMAIL=your@email.com
+CLOUDFLARE_API_KEY=your-cloudflare-api
+

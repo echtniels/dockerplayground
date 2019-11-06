@@ -1,0 +1,29 @@
+version: "3.6"
+services:
+  netdata:
+    image: netdata/netdata
+    restart: always
+    container_name: netdata
+    hostname: netdata
+    cap_add:
+        - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    networks:
+      - traefik_proxy
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.netdata.rule=Host(`netdata.${DOMAINNAME}`)"
+      - "traefik.http.routers.netdata.entrypoints=websecure"
+      - "traefik.http.routers.netdata.tls.certresolver=mydnschallenge"
+      - "traefik.http.services.netdata.loadbalancer.server.port=19999"
+      - "traefik.http.routers.netdata.middlewares=netdata-auth"
+      - "traefik.http.middlewares.netdata-auth.basicauth.users=${HTTP_USERNAME}:${HTTP_PASSWORD}"
+networks:
+  traefik_proxy:
+    external:
+      name: traefik_proxy

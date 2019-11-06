@@ -1,0 +1,17 @@
+version: "3.6"
+services:
+  searx:
+    image: wonderfall/searx
+    container_name: searx
+    networks:
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.searx.rule=Host(`s.${DOMAINNAME}`)"
+      - "traefik.http.routers.searx.entrypoints=websecure"
+      - "traefik.http.routers.searx.tls.certresolver=mydnschallenge"
+      - "traefik.http.services.searx.loadbalancer.server.port=8888"
+networks:
+  traefik_proxy:
+    external:
+      name: traefik_proxy
