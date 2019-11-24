@@ -1,0 +1,35 @@
+version: "3.6"
+services:
+  hello-world:
+    image: hello-world
+    restart: always
+    container_name: hello-world
+    networks:
+      - traefik_proxy
+# if there is a database service use a bridge network to keep transport internal
+#      - db_connection
+    volumes:
+      - ${DATADIR}/hello-world:/wherever
+#      - /etc/localtime:/etc/localtime:ro
+    labels:
+# for any service that needs to be exposed, enable traefik
+      - "traefik.enable=true"
+# if more than one network is used specify traefik network explicitly
+      = "traefik.docker.network=traefik_proxy"
+# define router, entrypoint and certificate provider
+      - "traefik.http.routers.hello-world.rule=Host(`hello-world.${DOMAINNAME}`)"
+      - "traefik.http.routers.hello-world.entrypoints=websecure"
+      - "traefik.http.routers.hello-world.tls.certresolver=mydnschallenge"
+# define port used by the service
+      - "traefik.http.services.hello-world.loadbalancer.server.port=1234"
+# sample labels enabling authentication and sso with keycloak
+#      - "traefik.http.routers.hello-world.middlewares=hello-world-auth"
+#      - "traefik.http.middlewares.hello-world-auth.forwardauth.address=http://traefik-forward-auth:4181"
+#      - "traefik.http.middlewares.hello-world-auth.forwardauth.trustForwardHeader=true"
+#      - "traefik.http.middlewares.hello-world-auth.forwardauth.authResponseHeaders=X-Forwarded-User"
+networks:
+  traefik_proxy:
+    external:
+      name: traefik_proxy
+#  db-connection:
+#    driver: bridge

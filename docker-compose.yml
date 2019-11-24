@@ -1,9 +1,7 @@
-# setup a Traefik Reverse-Proxy with a docker back-end
-# Services are not exposed by default; sample lable setup for services below
-# dashboard available with basic auth (user/pass in /etc/environment) at https://traefik.domainname
 version: '3'
 
 services:
+# traefik 2.0 Reverse Proxy
   traefik:
     image: traefik:v2.0
     container_name: traefik
@@ -16,53 +14,114 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.mydnschallenge.acme.dnschallenge=true"
       - "--certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare"
-      - "--certificatesresolvers.mydnschallenge.acme.email=${CLOUDFLARE_EMAIL}"
+      - "--certificatesresolvers.mydnschallenge.acme.dnschallenge.delayBeforeCheck=300"
+      - "--certificatesresolvers.mydnschallenge.acme.email=${LETSENCRYPT_EMAIL}"
       - "--certificatesresolvers.mydnschallenge.acme.storage=/letsencrypt/acme.json"
       - "--serverstransport.insecureskipverify=true"
     volumes:
-      - ${USERDIR}/docker/letsencrypt:/letsencrypt
+      - ${DATADIR}/letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
       - "80:80"
       - "443:443"
     environment:
-      - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
-      - CF_API_KEY=${CLOUDFLARE_API_KEY}
+      - "CF_API_EMAIL=${CLOUDFLARE_EMAIL}"
+      - "CF_API_KEY=${CLOUDFLARE_API_KEY}"
     labels:    
       - "traefik.enable=true"
-      # global redirect to https
+      - "traefik.docker.network=traefik_proxy"
+# global redirect http to https
       - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
       - "traefik.http.routers.http-catchall.entrypoints=web"
       - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
-      # middleware redirect
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      # Expose traefik Dashboard
+# Expose traefik Dashboard service api@internal
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAINNAME}`)"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.tls.certresolver=mydnschallenge"
       - "traefik.http.routers.traefik.entrypoints=websecure"
+# Authenticate to keycloak via traefik-forward-auth
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=${HTTP_USERNAME}:${HTTP_PASSWORD}"
-      
+      - "traefik.http.middlewares.traefik-auth.forwardauth.address=http://traefik-forward-auth:4181"
+      - "traefik.http.middlewares.traefik-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.traefik-auth.forwardauth.authResponseHeaders=X-Forwarded-User"     
     networks:
       - traefik_proxy
     restart: always
-
+# keycloak openid provider
+  keycloak:
+      image: jboss/keycloak
+      container_name: keycloak-app
+      environment:
+        - "DB_VENDOR=postgres"
+        - "DB_ADDR=postgres"
+        - "DB_DATABASE=keycloak"
+        - "DB_USER=keycloak"
+        - "DB_SCHEMA=public"
+        - "DB_PASSWORD=${SVC_KEYCLOAK_DB_PASSWORD}"
+        - "KEYCLOAK_USER=${SVC_KEYCLOAK_USER}"
+        - "KEYCLOAK_PASSWORD=${SVC_KEYCLOAK_PASWORD}"
+        - "PROXY_ADDRESS_FORWARDING=true"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik_proxy"
+        - "traefik.http.routers.keycloak.rule=Host(`keycloak.${DOMAINNAME}`)"
+        - "traefik.http.routers.keycloak.entrypoints=websecure"
+        - "traefik.http.routers.keycloak.tls.certresolver=mydnschallenge"
+        - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+      depends_on:
+        - postgres
+      networks:
+        - traefik_proxy
+        - db-connection
+# keycloak database
+  postgres:
+    image: postgres
+    container_name: keycloak-db
+    volumes:
+      - ${DATADIR}/keycloak/postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${SVC_KEYCLOAK_DB_PASSWORD}
+    networks:
+      - db-connection
+# The auth gate for SSO
+  traefik-forward-auth:
+# thomseddeon's image doesnt support OIDC_ISSUER yet
+#    image: thomseddon/traefik-forward-auth
+    image: funkypenguin/traefik-forward-auth
+    container_name: traefik-forward-auth
+    networks:
+      traefik_proxy:
+    environment:
+      CLIENT_ID: ${SVC_AUTHGATE_CLIENTID}
+      CLIENT_SECRET: ${SVC_AUTHGATE_SECRET}
+# This is based on using the Master realm. Create a new client, this will go into your CLIENT_ID, CLIENT_SECRET details.
+      OIDC_ISSUER: https://keycloak.${DOMAINNAME}/auth/realms/master
+      SECRET: ${SVC_AUTHGATE_OIDC_SEC}
+      AUTH_HOST: auth.${DOMAINNAME}
+      COOKIE_DOMAINS: ${DOMAINNAME}
+# https://github.com/thomseddon/traefik-forward-auth#user-restriction
+#      WHITELIST: ${EMAIL}
+      COOKIE_SECURE: "true"
+      LIFETIME: "2592000" 
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.http.routers.traefik-forward-auth.rule=Host(`auth.${DOMAINNAME}`)"
+      - "traefik.http.routers.traefik-forward-auth.entrypoints=websecure"
+      - "traefik.http.routers.traefik-forward-auth.tls.certresolver=mydnschallenge"
+      - "traefik.http.services.traefik-forward-auth.loadbalancer.server.port=4181"
+      - "traefik.http.routers.traefik-forward-auth.middlewares=auth-gateway"
+      - "traefik.http.middlewares.auth-gateway.forwardauth.address=http://traefik-forward-auth:4181"
+      - "traefik.http.middlewares.auth-gateway.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.auth-gateway.forwardauth.authResponseHeaders=X-Forwarded-User"    
 networks:
   traefik_proxy:
     external:
       name: traefik_proxy
-
-
-      
-
-# touch acme.json; chmod 600 acme.json
-
-# sample labels to expose myservice.domainname through port myport
-#    labels:
-#      - "traefik.enable=true"
-#      - "traefik.http.routers.myservice.rule=Host(`myservice.${DOMAINNAME}`)"
-#      - "traefik.http.routers.myservice.entrypoints=websecure"
-#      - "traefik.http.routers.myservice.tls.certresolver=mydnschallenge"
-#      - "traefik.http.services.myservice.loadbalancer.server.port=myport"
+  db-connection:
+    driver: bridge
