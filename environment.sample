@@ -14,8 +14,7 @@ TZ="Europe/Amsterdam"
 DOMAINNAME=example.com
 LETSENCRYPT_EMAIL=someone@somewhere.com
 #
-# directory for project (.yml) files and for data files
-DOCKERDIR="/home/username/dockerplayground"
+# directory for service files and databases. This can be anywhere on your system you have r/w rights
 DATADIR="/home/username/dockerplayground/data"
 #
 # cloudflare account to enable dns based wildcard certificates
