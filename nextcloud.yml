@@ -1,38 +1,39 @@
 version: "3"
 services:
   nextcloud:
-    container_name: nextcloud
+    container_name: nextcloud_app
     restart: always
     image: linuxserver/nextcloud
     volumes:
-      - ${USERDIR}/docker/nextcloud/config:/config
-      - ${USERDIR}/docker/nextcloud/data:/data
-      - ${USERDIR}/docker/shared:/shared
+      - ${DATADIR}/nextcloud/config:/config
+      - ${DATADIR}/nextcloud/data:/data
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
     networks:
       - traefik_proxy
+      - db_connection
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
       - "traefik.http.routers.nextcloud.rule=Host(`nextcloud.${DOMAINNAME}`)"
       - "traefik.http.routers.nextcloud.entrypoints=websecure"
       - "traefik.http.routers.nextcloud.tls.certresolver=mydnschallenge"
       - "traefik.http.services.nextcloud.loadbalancer.server.port=443"
       - "traefik.http.services.nextcloud.loadbalancer.server.scheme=https"
   mysql:
-    container_name: nextcloud_mysql
+    container_name: nextcloud_db
     restart: always
     image: mariadb:latest
     volumes:
-      - ${USERDIR}/docker/nextcloud/mysql:/var/lib/mysql
+      - ${DATADIR}/nextcloud/mysql:/var/lib/mysql
     networks:
-      - traefik_proxy
+      - db_connection
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-    labels:
-      - "traefik.enable=false"
+      - MYSQL_ROOT_PASSWORD=${SVC_NEXTCLOUD_MRP}
 networks:
   traefik_proxy:
     external:
       name: traefik_proxy
+  db_connection:
+    driver: bridge
