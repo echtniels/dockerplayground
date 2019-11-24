@@ -22,7 +22,9 @@ services:
       - "traefik.http.routers.netdata.tls.certresolver=mydnschallenge"
       - "traefik.http.services.netdata.loadbalancer.server.port=19999"
       - "traefik.http.routers.netdata.middlewares=netdata-auth"
-      - "traefik.http.middlewares.netdata-auth.basicauth.users=${HTTP_USERNAME}:${HTTP_PASSWORD}"
+      - "traefik.http.middlewares.netdata-auth.forwardauth.address=http://traefik-forward-auth:4181"
+      - "traefik.http.middlewares.netdata-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.netdata-auth.forwardauth.authResponseHeaders=X-Forwarded-User"
 networks:
   traefik_proxy:
     external:
