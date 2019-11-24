@@ -5,10 +5,10 @@ services:
     restart: always
     image: onlyoffice/documentserver
     volumes:
-      - ${USERDIR}/docker/onlyoffice/DocumentServer/logs:/var/log/onlyoffice
-      - ${USERDIR}/docker/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data
-      - ${USERDIR}/docker/onlyoffice/DocumentServer/lib:/var/lib/onlyoffice
-      - ${USERDIR}/docker/onlyoffice/DocumentServer/db:/var/lib/postgresql
+      - ${DATADIR}/onlyoffice/DocumentServer/logs:/var/log/onlyoffice
+      - ${DATADIR}/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data
+      - ${DATADIR}/onlyoffice/DocumentServer/lib:/var/lib/onlyoffice
+      - ${DATADIR}/onlyoffice/DocumentServer/db:/var/lib/postgresql
     networks:
       - traefik_proxy
     labels:
