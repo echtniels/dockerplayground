@@ -1,0 +1,27 @@
+version: "3.6"
+
+services:
+  code-server:
+    container_name: code-server
+    image: codercom/code-server
+    command: --auth none
+    restart: always
+    volumes:
+      - "${DOCKERDIR}/:/home/coder/project"
+      - "~/.local/share/code-server:/home/coder/.local/share/code-server"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.code-server.rule=Host(`code.${DOMAINNAME}`)"
+      - "traefik.http.routers.code-server.entrypoints=websecure"
+      - "traefik.http.routers.code-server.tls.certresolver=mydnschallenge"
+      - "traefik.http.services.code-server.loadbalancer.server.port=8080"
+      - "traefik.http.routers.code-server.middlewares=code-server-auth"
+      - "traefik.http.middlewares.code-server-auth.forwardauth.address=http://traefik-forward-auth:4181"
+      - "traefik.http.middlewares.code-server-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.code-server-auth.forwardauth.authResponseHeaders=X-Forwarded-User" 
+    networks:
+      - traefik_proxy
+networks:
+  traefik_proxy:
+    external:
+      name: traefik_proxy
