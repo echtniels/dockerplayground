@@ -1,24 +1,22 @@
 # purpose: defines default environment variables for any docker-compose job
 #
 # edit to reflect your setup, then:
-#
-# option 1: rename to .env 
-# https://docs.docker.com/compose/env-file/
-#
+# option 1: rename to .env (see: https://docs.docker.com/compose/env-file/ )
+# or
 # option 2: append to /etc/environment , log-out and logon again
 #
 # docker-compose will run as user PUID with group PGID. Find these with id -u and id -g
 PUID=1000
 PGID=1000
 #
-# timezone and DNS name
+# timezone, Domain name and LetsEncrypt Email address (any will do)
 TZ="Europe/Amsterdam"
 DOMAINNAME=example.com
 LETSENCRYPT_EMAIL=someone@somewhere.com
 #
-# directory for .yml files and for data files
-DOCKERDIR="/home/username/docker"
-DATADIR="/home/username/docker/data"
+# directory for project (.yml) files and for data files
+DOCKERDIR="/home/username/dockerplayground"
+DATADIR="/home/username/dockerplayground/data"
 #
 # cloudflare account to enable dns based wildcard certificates
 # use the Global API key found on your Cloudflare Profile page
@@ -37,4 +35,3 @@ SVC_AUTHGATE_OIDC_SEC=random-secret
 #
 # optional services config
 SVC_NEXTCLOUD_MRP=nextcloud-mysql-root-password
-
