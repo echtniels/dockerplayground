@@ -9,7 +9,7 @@
 #
 # docker-compose will run as user PUID with group PGID. Find these with id -u and id -g
 PUID=1000
-PGID=999
+PGID=1000
 #
 # timezone and DNS name
 TZ="Europe/Amsterdam"
@@ -17,8 +17,8 @@ DOMAINNAME=example.com
 LETSENCRYPT_EMAIL=someone@somewhere.com
 #
 # directory for .yml files and for data files
-DOCKERDIR="/home/administrator/docker"
-DATADIR="/home/administrator/docker/data"
+DOCKERDIR="/home/username/docker"
+DATADIR="/home/username/docker/data"
 #
 # cloudflare account to enable dns based wildcard certificates
 # use the Global API key found on your Cloudflare Profile page
