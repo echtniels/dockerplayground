@@ -136,3 +136,5 @@ The repo holds a few samples of useful services I rely on:
 
 And my favorite:
 - [code-server](https://github.com/echtniels/dockerplayground/blob/master/code-server.yml) a perfect VS-Code environment in your browser.
+
+Simple spin these up with `docker-compose -f projectname.yml -p projectname up -d` .
