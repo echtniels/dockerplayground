@@ -25,8 +25,10 @@ To make this work automatically with Traefik, we need to host our domain with a 
 
 1. Apply for a *free subscription* with Cloudflare, add your domain and either transfer it to them entirely or just point it to the Cloudflare nameservers listed in your control panel.
 2. Verify, save, open your domain page and move to the *"DNS"* tab. You will, at the very least, need:
-- an **A-record** pointing at the public IP address of your Docker host, and 
-- a **CNAME-record** named "**\***" (wildcard) pointed at your main domain. 
+   
+   - **A-record** pointing at the public IP address of your Docker host, and 
+   - **CNAME-record** named "**\***" (wildcard) pointed at your main domain. 
+   
 3. Select the *"SSL/TLS"* tab and make sure **full encryption** is selected.
 4. Click on your profile picture and select "My Profile". Select the *"API Tokens"* tab where you will find your *Global API key*. Note this down; this will be placed in the environment file as **CLOUDFLARE_API_KEY**. 
 
