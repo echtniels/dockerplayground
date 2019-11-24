@@ -46,14 +46,17 @@ docker logs -f traefik
 4.4. Select *Add to ID token* and *Add to Access token* and save.
 5. Go back to the "Clients" menu, "Client Scopes" tab, and add `traefik` to the *Assigned Default Client Scopes*.
 6. Don't forget to create yourself a user, if - as recommended - self registration is disabled for the master realm, and set a good password. This is also a good time to setup 2FA for your user.
-7. With the generated client secret placed in the .env file (or added to the /etc/environment file, and dont forget the logout logon),
+
+# Setup the forward-auth service
+
+With the generated client secret placed in the .env file (or added to the /etc/environment file, and dont forget the logout logon),
 ```
 docker-compose -p traefik-keycloak down
 docker-compose -p traefik-keycloak up -d
 ```
 and let compose re-create the forward-auth service with the right credentials.
 
-8. Check if things work by opening the Traefik dashboard at https://traefik.yourdomain.com since that one is secured with the new KeyCloak SSO.
+Check if things work by opening the Traefik dashboard at https://traefik.yourdomain.com since that one is secured with the new KeyCloak SSO.
 
 # Onwards, additional services
 You can now add any service by adding labels (refer to the template .yml, and don't forget to comment out exposed ports in service yml file, traefik does all the exposing) to your docker-compose files. The repo holds a few samples.
