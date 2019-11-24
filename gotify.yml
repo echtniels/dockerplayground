@@ -1,11 +1,11 @@
-version: "3"
+version: "3.6"
 services:
   gotify:
     container_name: gotify
     restart: always
     image: gotify/server
     volumes:
-      - ${USERDIR}/docker/gotify/data:/app/data
+      - ${DATADIR}/docker/gotify/data:/app/data
     networks:
       - traefik_proxy
     labels:
