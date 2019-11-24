@@ -7,8 +7,8 @@ services:
     command: --auth none
     restart: always
     volumes:
-      - "${DOCKERDIR}/:/home/coder/project"
-      - "~/.local/share/code-server:/home/coder/.local/share/code-server"
+      - "${PWD}/:/home/coder/project"
+      - "${HOME}/.local/share/code-server:/home/coder/.local/share/code-server"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.code-server.rule=Host(`code.${DOMAINNAME}`)"
