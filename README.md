@@ -1,5 +1,5 @@
 # dockerplayground
-Setup a secure Docker playground on your own VPS.
+Setup a secure Docker playground on your own VPS. Work in progress but opened because I could not find another working example of Traefik 2.0 working with KeyCloak for authentication.
 
 Pre-requisites:
 1. Internet facing Linux VPS; I built on Ubuntu 18.04 LTS
