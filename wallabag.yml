@@ -1,12 +1,12 @@
-version: "3"
+version: "3.6"
 services:
   wallabag:
     container_name: wallabag
     restart: always
     image: wallabag/wallabag
     volumes:
-      - ${USERDIR}/docker/wallabag/data:/var/www/wallabag/data
-      - ${USERDIR}/docker/wallabag/images:/var/www/wallabag/web/assets/images
+      - ${DATADIR}/wallabag/data:/var/www/wallabag/data
+      - ${DATADIR}/wallabag/images:/var/www/wallabag/web/assets/images
     networks:
       - traefik_proxy
     environment:
