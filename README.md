@@ -5,49 +5,52 @@ Setup a secure Docker playground on your own VPS. A work in progress but opened 
 - Automatically requests and renews LetsEncrypt certificates
 - Authentication at the proxy-level with SSO to any service that supports OpenID, OAuth2.0 or SAML
 
+The below steps will allow you to replicate my setup on your own VPS or home server running Docker. There is quite a bit of setup involved though so it is not merely a matter of editing the configuration file and running docker-compose.
+
 ## credits
 The following was essential in putting all of this together:
-- [Full Traefik with Keycloak SSO](https://dockerquestions.com/2019/07/10/full-traefik-with-keycloak-single-sign-on-with-postgres-db-for-ldap-capabilities/)
+- [Traefik Tutorial: Treafik Reverse Proxy with LetsEncrypt for Docker](https://www.smarthomebeginner.com/traefik-reverse-proxy-tutorial-for-docker/) which - describing Traefik 1.x - is now out of date but got me set up,
+- [Full Traefik with Keycloak Single Sign-On with Postgres db for LDAP capabilities](https://dockerquestions.com/2019/07/10/full-traefik-with-keycloak-single-sign-on-with-postgres-db-for-ldap-capabilities/) which again did not cover the new Traefik format but helped with everything else, and
+- [The Traefik 2.0 Docs](https://docs.traefik.io/) full of examples of the new router-middleware-service approach to labels.
 
 ## Pre-requisites:
 ### Internet facing Linux VPS; I built on Ubuntu 18.04 LTS
-Any stable distro will work. Make sure to enable automatic security updates, enable a firewall to only allow ports 22,80 and 443 and secure SSH access with a certificate.
+Any stable distro will work; I'm sure you can even get it all working on top of Windows but why.
+Make sure to enable automatic security updates, enable a firewall to only allow ports 22,80 and 443 and secure SSH access with a certificate.
 
 ### Domain name under your control and a Cloudflare account
-Traefik can expose services on sub-directories or sub-domains of your main domain. Chosing the sub-directory method is easy since one SSL cerfiticate will do, but not all services work well like this. We will thus be working with sub-domains and a good way to secure these is using a wildcard certificate authorised for each service. 
+Traefik can expose services on *subdirectory-per-service* or *subdomain-per-service* basis. Chosing the sub-directory method is easy since one SSL cerfiticate will do but not all services work well like this (looking at you, NextCloud). We will thus be working with sub-domains and a good way to secure these is using a wildcard certificate authorised for each service.
 
 To make this work automatically with Traefik, we need to host our domain with a provider allowing API access and whilst there's a number of them out there; [Cloudflare's free subscription](https://dash.cloudflare.com/sign-up?pt=f&utm_referrer=https://www.cloudflare.com/) will do just fine.
 
-1. Apply for a free subscription with Clourflare, add your domain and either transfer your domain to them entirely or just point it to the Cloudflare DNS server listed in your control panel.
-2. Verify, save, open your domain page and click the "DNS" tab. You will, at the least, need an *A-record* pointing at the public IP address of your Docker host, and a *CNAME-record* named "\*" (wildcard) pointed at your main domain. 
-3. click on your profile picture and select "My Profile". Select the "API Tokens" tab where you will find your *Global API key*. Note this down, this will be placed in the environment file as CLOUDFLARE_API_KEY 
+1. Apply for a *free subscription* with Cloudflare, add your domain and either transfer it to them entirely or just point it to the Cloudflare DNS server listed in your control panel.
+2. Verify, save, open your domain page and click the "DNS" tab. You will, at the least, need:
+- an **A-record** pointing at the public IP address of your Docker host, and 
+- a **CNAME-record** named "**\***" (wildcard) pointed at your main domain. 
+3. Click on your profile picture and select "My Profile". Select the "API Tokens" tab where you will find your *Global API key*. Note this down, this will be placed in the environment file as **CLOUDFLARE_API_KEY**. 
 
 ### Docker CE and Docker-Compose
-The below assumes you are running Ubuntu 18.04 LTS. For other distros [DuckDuckGo your specifics](https://duckduckgo.com/?q=setup+docker+and+docker-compose&t=h_&ia=web); in general we need Docker CE running, Docker-Compose installed and your user added to the docker group.
+The below assumes you are running Ubuntu 18.04 LTS. For other distros [DuckDuckGo your specifics](https://duckduckgo.com/?q=setup+docker+and+docker-compose&t=h_&ia=web). We need *Docker CE* running, *Docker-Compose* installed and your user added to the *docker* group.
 ```
-## add supporting modules
 sudo apt-get install apt-transport-https ca-certificates curl software-properties-common
-## add repos GPG key
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-## add [stable] Docker repo for Ubuntu 18.04 LTS
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-## update APT packages list
 sudo apt-get update
-## install DockerCE
 sudo apt-get install docker-ce
-## test docker
 sudo systemctl status docker
 ## find latest version of docker-compose at https://github.com/docker/compose/releases
 ## install docker-compose, replace [release] with version found
 sudo curl -L https://github.com/docker/compose/releases/download/[release]/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
-## test docker-compose
 docker-compose --version
+
 ## add user to docker group to simplify admin
 sudo usermod -aG docker ${USER}
 ```
 
 # Preparing the environment
+Move to the `dockerplayground` directory, or wherever you cloned this repo. Then,
+
 1. Prepare data directory and an empty letsencrypt cert-config, because docker can only create directories, not files, and we do not want either owned by root.
 ```
 mkdir data
@@ -57,19 +60,20 @@ chmod 600 data/letsencrypt/acme.json
 ```
 
 2. Open ./environment.sample and rename variables to reflect your situation. Then, either rename it to `.env` or append to `/etc/environment` (don't forget to logout and on again to update your environment).
-3. Run the compose file
+
+3. Run Docker-compose:
 ```
 docker-compose -p traefik-keycloak up -d
 ```
-4. Then, for some time, check how setup runs in the container logs:
+4. Check how setup runs in the container logs, and when satisfied escape with \[Ctrl]+\[C].
 ```
 docker logs -f traefik
 ```
-5. wait... https://keycloak.yourdomain.com becomes available. If at first you get a certificate warning, wait some more and refresh.
+5. wait... until https://keycloak.yourdomain.com becomes available. If at first you get a certificate warning, wait some more and refresh.
 
 # Configuring Keycloak
 
-1. Once you get the Keycloak welcome screen (with a valid certificate), click to open the Admin Console and logon with the credentials you put in the environment file.
+1. On the Keycloak welcome screen open the *Admin Console* and logon with the credentials you put in the environment file.
 
 2. Keeping it simple for now, we will use the master realm. Under *realm settings*, 
 2.1. Edit the *Login* settings to your liking, set Require SSL to "external requests".
