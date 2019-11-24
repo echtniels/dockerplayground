@@ -119,4 +119,20 @@ docker-compose -p traefik-keycloak up -d
 Check if things work by opening the Traefik dashboard at https://traefik.yourdomain.com since that one is secured with the new KeyCloak SSO.
 
 # Onwards, additional services
-You can now add any service by adding labels (refer to the template .yml, and don't forget to comment out exposed ports in service yml file, traefik does all the exposing) to your docker-compose files. The repo holds a few samples.
+You can now add any service by adding labels to your service's .yml file (refer to the [sample-service.yml](https://github.com/echtniels/dockerplayground/blob/master/sample-service.yml) and don't forget to comment out exposed ports; traefik does all the exposing). 
+
+If a service is public, has its own authentication or can be integrated to Keycloak using OpenID or SAML, you're set. In other cases, simply remove the comment marks from the auth-forward labels in the sample to make sure all traffic goes through Keycloak.
+
+As you spin new services up and down, Traefik will set up a route to them, and handle certificates automatically.
+
+## sample services
+The repo holds a few samples of useful services I rely on:
+- [nextcloud.yml](https://github.com/echtniels/dockerplayground/blob/master/nextcloud.yml) spins up a NextCloud instance with a MariaDB back-end.
+- [onlyoffice.yml](https://github.com/echtniels/dockerplayground/blob/master/onlyoffice.yml) enriches NextCloud with a web-based office suite.
+- [teedy.yml](https://github.com/echtniels/dockerplayground/blob/master/teedy.yml) the Teedy Document Management System.
+- [searx.yml](https://github.com/echtniels/dockerplayground/blob/master/searx.yml) the SearX Meta-Search-Engine.
+- [netdata.yml](https://github.com/echtniels/dockerplayground/blob/master/netdata.yml) web-based statistics for your Docker host.
+- [portainer.yml](https://github.com/echtniels/dockerplayground/blob/master/portainer.yml) is a web-frontend to Docker.
+
+And my favorite:
+- [code-server](https://github.com/echtniels/dockerplayground/blob/master/code-server.yml) a perfect VS-Code environment in your browser.
