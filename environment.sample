@@ -34,3 +34,7 @@ SVC_KEYCLOAK_PASWORD=password-for-admin-user
 SVC_AUTHGATE_CLIENTID=client-id
 SVC_AUTHGATE_SECRET=client-secret
 SVC_AUTHGATE_OIDC_SEC=random-secret
+#
+# optional services config
+SVC_NEXTCLOUD_MRP=nextcloud-mysql-root-password
+
