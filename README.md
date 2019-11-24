@@ -23,12 +23,12 @@ Traefik can expose services on *subdirectory-per-service* or *subdomain-per-serv
 
 To make this work automatically with Traefik, we need to host our domain with a provider allowing API access and whilst there's a number of them out there; [Cloudflare's free subscription](https://dash.cloudflare.com/sign-up?pt=f&utm_referrer=https://www.cloudflare.com/) will do just fine.
 
-1. Apply for a *free subscription* with Cloudflare, add your domain and either transfer it to them entirely or just point it to the Cloudflare DNS server listed in your control panel.
-2. Verify, save, open your domain page and click the "DNS" tab. You will, at the least, need:
+1. Apply for a *free subscription* with Cloudflare, add your domain and either transfer it to them entirely or just point it to the Cloudflare nameservers listed in your control panel.
+2. Verify, save, open your domain page and move to the *"DNS"* tab. You will, at the very least, need:
 - an **A-record** pointing at the public IP address of your Docker host, and 
 - a **CNAME-record** named "**\***" (wildcard) pointed at your main domain. 
-3. Select the *"SSL/TLS"* tab and make sure **full encryption** is set.
-4. Click on your profile picture and select "My Profile". Select the "API Tokens" tab where you will find your *Global API key*. Note this down, this will be placed in the environment file as **CLOUDFLARE_API_KEY**. 
+3. Select the *"SSL/TLS"* tab and make sure **full encryption** is selected.
+4. Click on your profile picture and select "My Profile". Select the *"API Tokens"* tab where you will find your *Global API key*. Note this down; this will be placed in the environment file as **CLOUDFLARE_API_KEY**. 
 
 ### Docker CE and Docker-Compose
 The below assumes you are running Ubuntu 18.04 LTS. For other distros [DuckDuckGo your specifics](https://duckduckgo.com/?q=setup+docker+and+docker-compose&t=h_&ia=web). We need *Docker CE* running, *Docker-Compose* installed and your user added to the *docker* group.
@@ -50,9 +50,9 @@ sudo usermod -aG docker ${USER}
 ```
 
 # Preparing the environment
-Move to the `dockerplayground` directory, or wherever you cloned this repo. Then,
+Move to the `dockerplayground` directory, or wherever you cloned this repo into. Then,
 
-1. Prepare data directory and an empty letsencrypt cert-config, because docker can only create directories, not files, and we do not want either owned by root.
+1. Prepare the **data** directory and an empty *letsencrypt certificate-config*, because docker can only create directories, not files, and we do not want either owned by root.
 ```
 mkdir data
 mkdir data/letsencrypt
@@ -60,9 +60,9 @@ touch data/letsencrypt/acme.json
 chmod 600 data/letsencrypt/acme.json
 ```
 
-2. Open ./environment.sample and rename variables to reflect your situation. Then, either rename it to `.env` or append to `/etc/environment` (don't forget to logout and on again to update your environment).
+2. Open `environment.sample` and rename variables to reflect your situation. Use strong, random passwords. Save the file and either rename it to `.env` or append to `/etc/environment` (in which case don't forget to logout and on again to update your environment).
 
-3. Run Docker-compose:
+3. Run Docker-compose to initialise the *traefik-keycloak* stack:
 ```
 docker-compose -p traefik-keycloak up -d
 ```
@@ -70,27 +70,42 @@ docker-compose -p traefik-keycloak up -d
 ```
 docker logs -f traefik
 ```
-5. wait... until https://keycloak.yourdomain.com becomes available. If at first you get a certificate warning, wait some more and refresh.
+5. wait... until https://keycloak.yourdomain.com becomes available. If at first you get a certificate warning, wait some more and refresh. To prevent being locked-out, a delay of 5 minutes is set between two certificate requests to LetsEncrypt.
 
 # Configuring Keycloak
 
 1. On the Keycloak welcome screen open the *Admin Console* and logon with the credentials you put in the environment file.
 
 2. Keeping it simple for now, we will use the master realm. Under *realm settings*, 
-2.1. Edit the *Login* settings to your liking, set Require SSL to "external requests".
-2.2. Complete the *email* settings with a sendgrid or other off-site smtp server
-2.3. Under *security defenses* switch on "Brute Force Detection".
+
+   * Edit the *Login* settings to your liking, set Require SSL to "external requests".
+
+   * Complete the *email* settings with a sendgrid or other off-site smtp server
+
+   * Under *security defenses* switch on "Brute Force Detection".
+
 3. Select the *clients* menu, and create a new client
-3.1. *client id* , *name* and *description* can all be `traefik`.
-3.2. As *Valid Redirect URL*, either enter all the individual service URLs or a wildcard. 
-3.3. Set the *Access Type* to "Confidential" and save to get a "credentials" tab.
-3.4. On the Credentials tab, select "Client Id and Secret" and note down the *Secret* listed. You will place this in the environment file as `SVC_AUTHGATE_SECRET`
+
+   * *client id* , *name* and *description* can all be `traefik`.
+
+   * As *Valid Redirect URL*, either enter all the individual service URLs or a wildcard. 
+
+   * Set the *Access Type* to "Confidential" and save to get a "credentials" tab.
+
+   * On the Credentials tab, select "Client Id and Secret" and note down the *Secret* listed. You will place this in the environment file as `SVC_AUTHGATE_SECRET`
+
 4. Save, and select the "Client Scopes" menu. Create a new one.
-4.1. Enter `traefik` as *name* and `OpenID-connect` as protocol. Select *Include in token scope*.
-4.2. Click on "Mappers" and create a new mapper called `traefik`.
-4.3. Set the *Mapper Type* to `Audience` and select `traefik` as *Included Client Audience*.
-4.4. Select *Add to ID token* and *Add to Access token* and save.
+
+   * Enter `traefik` as *name* and `OpenID-connect` as protocol. Select *Include in token scope*.
+
+   * Click on "Mappers" and create a new mapper called `traefik`.
+
+   * Set the *Mapper Type* to `Audience` and select `traefik` as *Included Client Audience*.
+
+   * Select *Add to ID token* and *Add to Access token* and save.
+
 5. Go back to the "Clients" menu, "Client Scopes" tab, and add `traefik` to the *Assigned Default Client Scopes*.
+
 6. Don't forget to create yourself a user, if - as recommended - self registration is disabled for the master realm, and set a good password. This is also a good time to setup 2FA for your user.
 
 # Setup the forward-auth service
