@@ -1,4 +1,4 @@
-version: "3"
+version: "3.6"
 services:
   portainer:
     image: portainer/portainer
@@ -7,7 +7,7 @@ services:
     command: -H unix:///var/run/docker.sock
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${USERDIR}/docker/portainer:/data 
+      - ${DATADIR}/portainer:/data 
     environment:
       - TZ=${TZ}
     labels:
@@ -16,9 +16,12 @@ services:
       - "traefik.http.routers.portainer.entrypoints=websecure"
       - "traefik.http.routers.portainer.tls.certresolver=mydnschallenge"
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+      - "traefik.http.routers.portainer.middlewares=portainer-auth"
+      - "traefik.http.middlewares.portainer-auth.forwardauth.address=http://traefik-forward-auth:4181"
+      - "traefik.http.middlewares.portainer-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.portainer-auth.forwardauth.authResponseHeaders=X-Forwarded-User"
     networks:
       - traefik_proxy
-
 networks:
   traefik_proxy:
     external:
