@@ -7,7 +7,7 @@ Setup a secure Docker playground on your own VPS. A work in progress but opened 
 
 The below steps will allow you to replicate my setup on your own VPS or home server running Docker. There is quite a bit of setup involved though so it is not merely a matter of editing the configuration file and running docker-compose.
 
-## credits
+## Acknowledgement
 The following was essential in putting all of this together:
 - [Traefik Tutorial: Treafik Reverse Proxy with LetsEncrypt for Docker](https://www.smarthomebeginner.com/traefik-reverse-proxy-tutorial-for-docker/) which - describing Traefik 1.x - is now out of date but got me set up,
 - [Full Traefik with Keycloak Single Sign-On with Postgres db for LDAP capabilities](https://dockerquestions.com/2019/07/10/full-traefik-with-keycloak-single-sign-on-with-postgres-db-for-ldap-capabilities/) which again did not cover the new Traefik format but helped with everything else, and
@@ -16,12 +16,12 @@ The following was essential in putting all of this together:
 ## Pre-requisites:
 ### Internet facing Linux VPS; I built on Ubuntu 18.04 LTS
 Any stable distro will work; I'm sure you can even get it all working on top of Windows but why.
-Make sure to enable automatic security updates, enable a firewall to only allow ports 22,80 and 443 and secure SSH access with a certificate.
+Make sure to [set-up automatic security updates](https://phoenixnap.com/kb/automatic-security-updates-ubuntu), [enable a firewall](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-with-ufw-on-ubuntu-18-04) to only allow ports 22,80 and 443 and [secure SSH access with a certificate](https://www.cyberciti.biz/faq/ubuntu-18-04-setup-ssh-public-key-authentication/).
 
 ### Domain name under your control and a Cloudflare account
-Traefik can expose services on *subdirectory-per-service* or *subdomain-per-service* basis. Chosing the sub-directory method is easy since one SSL cerfiticate will do but not all services work well like this (looking at you, NextCloud). We will thus be working with sub-domains and a good way to secure these is using a wildcard certificate authorised for each service.
+Traefik can expose services on a *subdirectory-per-service* or *subdomain-per-service* basis. The first method is the easiest to set-up since a single SSL cerfiticate will do but not all services work well like this (looking at you, NextCloud). We will thus be working with sub-domains and a good way to secure these is using a wildcard certificate authorised for each service.
 
-To make this work automatically with Traefik, we need to host our domain with a provider allowing API access and whilst there's a number of them out there; [Cloudflare's free subscription](https://dash.cloudflare.com/sign-up?pt=f&utm_referrer=https://www.cloudflare.com/) will do just fine.
+To make this work automatically with Traefik, we need to host our domain with a provider allowing API access and whilst there's a number of them out there; [Cloudflare's free subscription](https://dash.cloudflare.com/sign-up?pt=f&utm_referrer=https://www.cloudflare.com/) will do just fine. Cloudflare's API allows Traefik to add a TXT record to your domain records which LetsEncrypt uses to verify the requested certificate update.
 
 1. Apply for a *free subscription* with Cloudflare, add your domain and either transfer it to them entirely or just point it to the Cloudflare nameservers listed in your control panel.
 2. Verify, save, open your domain page and move to the *"DNS"* tab. You will, at the very least, need:
@@ -139,4 +139,4 @@ The repo holds a few samples of useful services I rely on:
 And my favorite:
 - [code-server](https://github.com/echtniels/dockerplayground/blob/master/code-server.yml) a perfect VS-Code environment in your browser.
 
-Simple spin these up with `docker-compose -f projectname.yml -p projectname up -d` .
+You can spin up any of these services with `docker-compose -f projectname.yml -p projectname up -d` .
