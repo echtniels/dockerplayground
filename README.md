@@ -72,7 +72,7 @@ docker-compose -p traefik-keycloak up -d
 ```
 docker logs -f traefik
 ```
-5. wait... until https://keycloak.yourdomain.com becomes available. If at first you get a certificate warning, wait some more and refresh. To prevent being locked-out, a delay of 5 minutes is set between two certificate requests to LetsEncrypt.
+5. Try to open Keycloak's front-end at https://keycloak.yourdomain.com. If at first you get a server error or certificate warning, wait a minute or two and refresh. To prevent being locked-out, a delay of 5 minutes is set between two LetsEncrypt certificate requests.
 
 # Configuring Keycloak
 
