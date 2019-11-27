@@ -18,6 +18,7 @@ services:
       - "--certificatesresolvers.mydnschallenge.acme.email=${LETSENCRYPT_EMAIL}"
       - "--certificatesresolvers.mydnschallenge.acme.storage=/letsencrypt/acme.json"
       - "--serverstransport.insecureskipverify=true"
+    restart: always
     volumes:
       - ${DATADIR}/letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -48,11 +49,11 @@ services:
       - "traefik.http.middlewares.traefik-auth.forwardauth.authResponseHeaders=X-Forwarded-User"     
     networks:
       - traefik_proxy
-    restart: always
 # keycloak openid provider
   keycloak:
       image: jboss/keycloak
       container_name: keycloak-app
+      restart: always
       environment:
         - "DB_VENDOR=postgres"
         - "DB_ADDR=postgres"
@@ -79,6 +80,7 @@ services:
   postgres:
     image: postgres
     container_name: keycloak-db
+    restart: always
     volumes:
       - ${DATADIR}/keycloak/postgres_data:/var/lib/postgresql/data
     environment:
